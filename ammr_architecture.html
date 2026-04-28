@@ -1,0 +1,937 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AMMR — Solution Architecture</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+<style>
+  :root {
+    --bg: #0a0e1a;
+    --bg2: #111827;
+    --bg3: #1a2235;
+    --border: rgba(255,255,255,0.07);
+    --border-active: rgba(99,179,255,0.4);
+    --text: #e2e8f0;
+    --muted: #64748b;
+    --accent: #3b82f6;
+    --accent2: #06b6d4;
+    --green: #10b981;
+    --coral: #f97316;
+    --purple: #8b5cf6;
+    --yellow: #eab308;
+    --mono: 'Space Mono', monospace;
+    --sans: 'DM Sans', sans-serif;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--sans);
+    min-height: 100vh;
+    overflow-x: hidden;
+  }
+
+  /* Grid background */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(59,130,246,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(59,130,246,0.03) 1px, transparent 1px);
+    background-size: 40px 40px;
+    pointer-events: none;
+    z-index: 0;
+  }
+
+  .wrapper {
+    position: relative;
+    z-index: 1;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 40px 24px 80px;
+  }
+
+  /* Header */
+  header {
+    margin-bottom: 48px;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  .tag {
+    display: inline-block;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    border: 1px solid rgba(6,182,212,0.3);
+    padding: 4px 10px;
+    border-radius: 4px;
+    margin-bottom: 14px;
+  }
+
+  h1 {
+    font-family: var(--mono);
+    font-size: clamp(22px, 4vw, 36px);
+    font-weight: 700;
+    color: #fff;
+    line-height: 1.15;
+    margin-bottom: 10px;
+    letter-spacing: -0.02em;
+  }
+
+  h1 span { color: var(--accent); }
+
+  .subtitle {
+    font-size: 15px;
+    color: var(--muted);
+    font-weight: 300;
+    max-width: 500px;
+    line-height: 1.6;
+  }
+
+  /* Layers container */
+  .layers {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+  }
+
+  /* Connector arrow between layers */
+  .connector {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    position: relative;
+  }
+
+  .connector::before {
+    content: '';
+    position: absolute;
+    top: 0; bottom: 0;
+    left: 50%;
+    width: 1px;
+    background: linear-gradient(to bottom, var(--border-active), transparent);
+  }
+
+  .connector-dot {
+    width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--accent);
+    z-index: 1;
+    box-shadow: 0 0 10px var(--accent);
+    animation: pulse 2s ease-in-out infinite;
+  }
+
+  @keyframes pulse {
+    0%,100% { box-shadow: 0 0 6px var(--accent); transform: scale(1); }
+    50% { box-shadow: 0 0 16px var(--accent); transform: scale(1.3); }
+  }
+
+  /* Layer card */
+  .layer {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--bg2);
+    overflow: hidden;
+    animation: fadeUp 0.5s ease both;
+  }
+
+  .layer:nth-child(1) { animation-delay: 0.1s; }
+  .layer:nth-child(3) { animation-delay: 0.2s; }
+  .layer:nth-child(5) { animation-delay: 0.3s; }
+  .layer:nth-child(7) { animation-delay: 0.4s; }
+  .layer:nth-child(9) { animation-delay: 0.5s; }
+
+  @keyframes fadeUp {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .layer-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 16px 20px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg3);
+  }
+
+  .layer-num {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    border: 1px solid var(--border);
+    padding: 2px 7px;
+    border-radius: 4px;
+    letter-spacing: 0.05em;
+  }
+
+  .layer-title {
+    font-family: var(--mono);
+    font-size: 12px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+  }
+
+  .layer-tech {
+    margin-left: auto;
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--muted);
+    background: var(--bg);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+  }
+
+  /* Component grid */
+  .components {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 1px;
+    background: var(--border);
+  }
+
+  .component {
+    background: var(--bg2);
+    padding: 18px 16px;
+    cursor: pointer;
+    transition: background 0.18s, transform 0.15s;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .component::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.2s;
+  }
+
+  .component:hover { background: var(--bg3); }
+  .component:hover::before { opacity: 1; }
+  .component.active { background: var(--bg3); }
+
+  /* Color accents per layer */
+  .layer-hw .component::before { background: linear-gradient(135deg, rgba(16,185,129,0.08), transparent); }
+  .layer-hw .layer-title { color: var(--green); }
+  .layer-hw .layer-num { border-color: rgba(16,185,129,0.3); color: var(--green); }
+  .layer-hw .component.active { border-left: 2px solid var(--green); }
+  .layer-hw .comp-icon { color: var(--green); }
+
+  .layer-fw .component::before { background: linear-gradient(135deg, rgba(139,92,246,0.08), transparent); }
+  .layer-fw .layer-title { color: var(--purple); }
+  .layer-fw .layer-num { border-color: rgba(139,92,246,0.3); color: var(--purple); }
+  .layer-fw .component.active { border-left: 2px solid var(--purple); }
+  .layer-fw .comp-icon { color: var(--purple); }
+
+  .layer-algo .component::before { background: linear-gradient(135deg, rgba(249,115,22,0.08), transparent); }
+  .layer-algo .layer-title { color: var(--coral); }
+  .layer-algo .layer-num { border-color: rgba(249,115,22,0.3); color: var(--coral); }
+  .layer-algo .component.active { border-left: 2px solid var(--coral); }
+  .layer-algo .comp-icon { color: var(--coral); }
+
+  .layer-viz .component::before { background: linear-gradient(135deg, rgba(59,130,246,0.08), transparent); }
+  .layer-viz .layer-title { color: var(--accent); }
+  .layer-viz .layer-num { border-color: rgba(59,130,246,0.3); color: var(--accent); }
+  .layer-viz .component.active { border-left: 2px solid var(--accent); }
+  .layer-viz .comp-icon { color: var(--accent); }
+
+  .layer-comms .component::before { background: linear-gradient(135deg, rgba(6,182,212,0.08), transparent); }
+  .layer-comms .layer-title { color: var(--accent2); }
+  .layer-comms .layer-num { border-color: rgba(6,182,212,0.3); color: var(--accent2); }
+  .layer-comms .component.active { border-left: 2px solid var(--accent2); }
+  .layer-comms .comp-icon { color: var(--accent2); }
+
+  .comp-icon {
+    font-size: 18px;
+    margin-bottom: 8px;
+    display: block;
+  }
+
+  .comp-name {
+    font-family: var(--mono);
+    font-size: 11px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+    letter-spacing: 0.02em;
+  }
+
+  .comp-sub {
+    font-size: 11px;
+    color: var(--muted);
+    line-height: 1.4;
+  }
+
+  .comp-arrow {
+    position: absolute;
+    top: 12px; right: 12px;
+    font-size: 10px;
+    color: var(--muted);
+    opacity: 0;
+    transition: opacity 0.2s, transform 0.2s;
+  }
+
+  .component:hover .comp-arrow {
+    opacity: 1;
+    transform: translate(2px, -2px);
+  }
+
+  /* Detail panel */
+  .detail-panel {
+    position: fixed;
+    right: 0; top: 0; bottom: 0;
+    width: min(420px, 100vw);
+    background: #0d1426;
+    border-left: 1px solid var(--border-active);
+    z-index: 100;
+    transform: translateX(100%);
+    transition: transform 0.35s cubic-bezier(0.16,1,0.3,1);
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .detail-panel.open {
+    transform: translateX(0);
+  }
+
+  .panel-header {
+    padding: 24px 24px 20px;
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    background: #0d1426;
+    z-index: 1;
+  }
+
+  .panel-close {
+    position: absolute;
+    top: 20px; right: 20px;
+    background: var(--bg3);
+    border: 1px solid var(--border);
+    color: var(--muted);
+    width: 32px; height: 32px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 16px;
+    display: flex; align-items: center; justify-content: center;
+    transition: background 0.15s, color 0.15s;
+  }
+
+  .panel-close:hover { background: var(--border); color: #fff; }
+
+  .panel-tag {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: 0.15em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 8px;
+  }
+
+  .panel-title {
+    font-family: var(--mono);
+    font-size: 18px;
+    font-weight: 700;
+    color: #fff;
+    margin-bottom: 4px;
+  }
+
+  .panel-subtitle {
+    font-size: 13px;
+    color: var(--muted);
+  }
+
+  .panel-body {
+    padding: 24px;
+    flex: 1;
+  }
+
+  .panel-section {
+    margin-bottom: 28px;
+  }
+
+  .panel-section-title {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-bottom: 10px;
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+
+  .panel-desc {
+    font-size: 14px;
+    line-height: 1.7;
+    color: #94a3b8;
+  }
+
+  .panel-desc strong { color: var(--text); font-weight: 500; }
+
+  .code-block {
+    background: var(--bg);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 14px 16px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #7dd3fc;
+    line-height: 1.8;
+    overflow-x: auto;
+    margin-top: 10px;
+  }
+
+  .code-block .cm { color: var(--muted); }
+  .code-block .ck { color: #c084fc; }
+  .code-block .cs { color: #86efac; }
+  .code-block .cn { color: #fbbf24; }
+
+  .tip-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tip-list li {
+    display: flex;
+    gap: 10px;
+    font-size: 13px;
+    color: #94a3b8;
+    line-height: 1.5;
+  }
+
+  .tip-list li::before {
+    content: '→';
+    color: var(--accent);
+    font-family: var(--mono);
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+
+  .badge-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 8px;
+  }
+
+  .badge {
+    font-family: var(--mono);
+    font-size: 10px;
+    padding: 4px 9px;
+    border-radius: 5px;
+    border: 1px solid var(--border);
+    color: var(--muted);
+    background: var(--bg);
+  }
+
+  /* Overlay */
+  .overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,0.5);
+    z-index: 99;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.3s;
+  }
+  .overlay.show { opacity: 1; pointer-events: all; }
+
+  /* Footer hint */
+  .hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: var(--mono);
+    margin-top: 32px;
+    animation: fadeUp 0.5s 0.8s ease both;
+  }
+
+  .hint span {
+    display: inline-block;
+    border: 1px solid var(--border);
+    padding: 6px 14px;
+    border-radius: 20px;
+  }
+
+  @media (max-width: 600px) {
+    .components { grid-template-columns: 1fr 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<div class="wrapper">
+  <header>
+    <div class="tag">UCP — Autonomous Miniature Mapping Robot</div>
+    <h1>Solution <span>Architecture</span></h1>
+    <p class="subtitle">5-layer system design — click any component to understand what it does, why it's needed, and how to implement it.</p>
+  </header>
+
+  <div class="layers">
+
+    <!-- Layer 1: Hardware -->
+    <div class="layer layer-hw">
+      <div class="layer-header">
+        <span class="layer-num">L1</span>
+        <span class="layer-title">Hardware</span>
+        <span class="layer-tech">Physical Robot</span>
+      </div>
+      <div class="components">
+        <div class="component" onclick="openPanel('lidar')">
+          <span class="comp-icon">◈</span>
+          <div class="comp-name">Ultrasonic / LiDAR</div>
+          <div class="comp-sub">Distance sensing</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('camera')">
+          <span class="comp-icon">◉</span>
+          <div class="comp-name">Camera Module</div>
+          <div class="comp-sub">Object detection feed</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('imu')">
+          <span class="comp-icon">⊕</span>
+          <div class="comp-name">IMU + Encoder</div>
+          <div class="comp-sub">Odometry & orientation</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('motors')">
+          <span class="comp-icon">⊗</span>
+          <div class="comp-name">Motor Driver</div>
+          <div class="comp-sub">DC / Stepper motors</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('mcu')">
+          <span class="comp-icon">▣</span>
+          <div class="comp-name">MCU</div>
+          <div class="comp-sub">Arduino / STM32</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-dot"></div></div>
+
+    <!-- Layer 2: Firmware -->
+    <div class="layer layer-fw">
+      <div class="layer-header">
+        <span class="layer-num">L2</span>
+        <span class="layer-title">Firmware</span>
+        <span class="layer-tech">Embedded C / MicroPython</span>
+      </div>
+      <div class="components">
+        <div class="component" onclick="openPanel('kalman')">
+          <span class="comp-icon">⋈</span>
+          <div class="comp-name">Sensor Fusion</div>
+          <div class="comp-sub">Kalman filter</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('pid')">
+          <span class="comp-icon">⊛</span>
+          <div class="comp-name">Motor PID</div>
+          <div class="comp-sub">Speed + direction control</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('uart')">
+          <span class="comp-icon">⇌</span>
+          <div class="comp-name">UART Bridge</div>
+          <div class="comp-sub">MCU ↔ Raspberry Pi</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('interrupt')">
+          <span class="comp-icon">⚡</span>
+          <div class="comp-name">Interrupt Handler</div>
+          <div class="comp-sub">Real-time sensor reads</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-dot"></div></div>
+
+    <!-- Layer 3: Algorithms -->
+    <div class="layer layer-algo">
+      <div class="layer-header">
+        <span class="layer-num">L3</span>
+        <span class="layer-title">Algorithm Engine</span>
+        <span class="layer-tech">Python / ROS on Raspberry Pi</span>
+      </div>
+      <div class="components">
+        <div class="component" onclick="openPanel('slam')">
+          <span class="comp-icon">◎</span>
+          <div class="comp-name">SLAM Module</div>
+          <div class="comp-sub">GMapping / Hector SLAM</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('astar')">
+          <span class="comp-icon">⋯</span>
+          <div class="comp-name">Path Planner</div>
+          <div class="comp-sub">A* / Dijkstra's</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('nav')">
+          <span class="comp-icon">⊾</span>
+          <div class="comp-name">Navigation Ctrl</div>
+          <div class="comp-sub">DWA obstacle avoidance</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('yolo')">
+          <span class="comp-icon">⊡</span>
+          <div class="comp-name">Object Tracker</div>
+          <div class="comp-sub">YOLOv5 / OpenCV</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-dot"></div></div>
+
+    <!-- Layer 4: Visualization -->
+    <div class="layer layer-viz">
+      <div class="layer-header">
+        <span class="layer-num">L4</span>
+        <span class="layer-title">Visualization Interface</span>
+        <span class="layer-tech">Python / Web Dashboard</span>
+      </div>
+      <div class="components">
+        <div class="component" onclick="openPanel('mapview')">
+          <span class="comp-icon">▦</span>
+          <div class="comp-name">Live Map Display</div>
+          <div class="comp-sub">RViz / matplotlib</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('pathoverlay')">
+          <span class="comp-icon">⇢</span>
+          <div class="comp-name">Path Overlay</div>
+          <div class="comp-sub">Planned vs actual</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('objpanel')">
+          <span class="comp-icon">⊞</span>
+          <div class="comp-name">Object Panel</div>
+          <div class="comp-sub">Detections + labels</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('dashboard')">
+          <span class="comp-icon">◫</span>
+          <div class="comp-name">Dashboard</div>
+          <div class="comp-sub">Speed, battery, logs</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="connector"><div class="connector-dot"></div></div>
+
+    <!-- Layer 5: Comms -->
+    <div class="layer layer-comms">
+      <div class="layer-header">
+        <span class="layer-num">L5</span>
+        <span class="layer-title">Communication Backbone</span>
+        <span class="layer-tech">Protocols</span>
+      </div>
+      <div class="components">
+        <div class="component" onclick="openPanel('rostopic')">
+          <span class="comp-icon">⊙</span>
+          <div class="comp-name">ROS Topics</div>
+          <div class="comp-sub">Pub/sub messaging</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('websocket')">
+          <span class="comp-icon">⋄</span>
+          <div class="comp-name">WebSocket / Flask</div>
+          <div class="comp-sub">Live browser streaming</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('uartcomms')">
+          <span class="comp-icon">≋</span>
+          <div class="comp-name">UART Serial</div>
+          <div class="comp-sub">MCU to SBC bridge</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+        <div class="component" onclick="openPanel('wifi')">
+          <span class="comp-icon">≈</span>
+          <div class="comp-name">WiFi / SSH</div>
+          <div class="comp-sub">Remote access + stream</div>
+          <span class="comp-arrow">↗</span>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <p class="hint"><span>↑ Click any component block to explore</span></p>
+</div>
+
+<!-- Overlay -->
+<div class="overlay" id="overlay" onclick="closePanel()"></div>
+
+<!-- Detail Panel -->
+<div class="detail-panel" id="panel">
+  <div class="panel-header">
+    <button class="panel-close" onclick="closePanel()">✕</button>
+    <div class="panel-tag" id="panel-tag">Layer</div>
+    <div class="panel-title" id="panel-title">Component</div>
+    <div class="panel-subtitle" id="panel-subtitle">subtitle</div>
+  </div>
+  <div class="panel-body" id="panel-body"></div>
+</div>
+
+<script>
+const data = {
+  lidar: {
+    tag: 'L1 — Hardware',
+    title: 'Ultrasonic / LiDAR',
+    subtitle: 'Primary distance sensing',
+    what: `<strong>Ultrasonic sensors</strong> (like HC-SR04) use sound waves to measure distance — cheap, easy to wire, good for 2cm–4m. <strong>LiDAR</strong> (like RPLiDAR A1) spins a laser and gives you 360° distance readings — much more accurate and essential for proper SLAM mapping.<br/><br/>For a university project, start with ultrasonic for basic obstacle detection, then upgrade to LiDAR if your budget allows — it will make your SLAM map far cleaner.`,
+    tips: ['HC-SR04 costs ~₹80, RPLiDAR A1 costs ~₹8,000', 'LiDAR gives 360° scan; ultrasonic gives a single cone', 'Multiple ultrasonic sensors can mimic LiDAR at low cost', 'LiDAR connects via USB to Raspberry Pi directly'],
+    code: `<span class="cm">// HC-SR04 ultrasonic — Arduino</span>\n<span class="ck">long</span> duration, distance;\ndigitalWrite(TRIG, LOW);\ndelayMicroseconds(2);\ndigitalWrite(TRIG, HIGH);\ndelayMicroseconds(10);\nduration = pulseIn(ECHO, HIGH);\ndistance = duration * 0.034 / 2;`,
+    badges: ['HC-SR04', 'RPLiDAR A1', 'VL53L0X ToF', 'HCSR04']
+  },
+  camera: {
+    tag: 'L1 — Hardware',
+    title: 'Camera Module',
+    subtitle: 'Object detection visual feed',
+    what: `The camera feeds frames to your object detection pipeline (YOLOv5 or OpenCV). A <strong>Raspberry Pi Camera v2</strong> connects directly to the Pi's CSI port at low latency. A USB webcam also works but has slightly higher latency.<br/><br/>You'll capture frames in Python, pass them to YOLOv5, and get bounding boxes back for every detected object.`,
+    tips: ['Pi Camera v2 connects via CSI — lower latency than USB', '640×480 at 30fps is enough for real-time detection', 'Use picamera2 library for Pi Camera control', 'OpenCV VideoCapture works for USB webcams'],
+    code: `<span class="cm"># Capture frame — Python</span>\n<span class="ck">import</span> cv2\ncap = cv2.VideoCapture(0)\n<span class="ck">ret</span>, frame = cap.read()\n<span class="cm"># Pass frame to YOLO model</span>\nresults = model(frame)\nresults.render()`,
+    badges: ['Pi Camera v2', 'USB Webcam', 'OpenCV', 'picamera2']
+  },
+  imu: {
+    tag: 'L1 — Hardware',
+    title: 'IMU + Wheel Encoder',
+    subtitle: 'Odometry & orientation tracking',
+    what: `The <strong>IMU</strong> (Inertial Measurement Unit, e.g. MPU-6050) measures acceleration and gyroscope data — giving you the robot's orientation/heading. <strong>Wheel encoders</strong> count how many times wheels have rotated, letting you calculate distance traveled.<br/><br/>Combined, these give you <strong>odometry</strong> — an estimate of where the robot is based on how far and which direction it has moved. This is fused with LiDAR data in SLAM.`,
+    tips: ['MPU-6050 gives 6-DOF (accel + gyro) over I2C', 'Encoder pulses per revolution determines resolution', 'Drift builds up over time — SLAM corrects this', 'Use Kalman filter in firmware to smooth noisy IMU data'],
+    code: `<span class="cm">// MPU-6050 I2C read — Arduino</span>\n<span class="ck">#include</span> <span class="cs">Wire.h</span>\n<span class="ck">#include</span> <span class="cs">MPU6050.h</span>\nMPU6050 mpu;\nmpu.initialize();\n<span class="cn">int16_t</span> ax,ay,az,gx,gy,gz;\nmpu.getMotion6(&ax,&ay,&az,\n               &gx,&gy,&gz);`,
+    badges: ['MPU-6050', 'MPU-9250', 'Hall encoder', 'Optical encoder']
+  },
+  motors: {
+    tag: 'L1 — Hardware',
+    title: 'Motor Driver',
+    subtitle: 'Controls DC / stepper motors',
+    what: `The motor driver takes low-power PWM signals from the MCU and amplifies them to drive the actual motors. The <strong>L298N</strong> is the most common choice for university projects — it can drive 2 DC motors with direction and speed control.<br/><br/>You send PWM duty cycle values from Arduino → L298N → motors spin at that speed and direction.`,
+    tips: ['L298N handles up to 2A per channel — enough for small robots', 'PWM frequency ~1kHz works well for DC motors', 'Use separate power supply for motors vs MCU logic', 'TB6612FNG is more efficient than L298N if overheating'],
+    code: `<span class="cm">// L298N motor control — Arduino</span>\n<span class="ck">void</span> setMotor(<span class="cn">int</span> pwm, <span class="cn">bool</span> dir) {\n  digitalWrite(IN1, dir);\n  digitalWrite(IN2, !dir);\n  analogWrite(ENA, pwm); <span class="cm">// 0–255</span>\n}`,
+    badges: ['L298N', 'TB6612FNG', 'DRV8833', 'L293D']
+  },
+  mcu: {
+    tag: 'L1 — Hardware',
+    title: 'Microcontroller (MCU)',
+    subtitle: 'Real-time embedded controller',
+    what: `The MCU handles all <strong>real-time, time-critical tasks</strong> — reading sensors at precise intervals, running PID loops for motor control, firing interrupts. The Raspberry Pi is too slow for hard real-time and has no native GPIO PWM suitable for motors.<br/><br/>Best choice: <strong>Arduino Mega</strong> for beginners (lots of I/O, easy to program), or <strong>STM32</strong> for more advanced control with better timers and FPU.`,
+    tips: ['Arduino Mega has 54 digital I/O pins — plenty for sensors', 'STM32 Blue Pill runs at 72MHz vs Arduino\'s 16MHz', 'MCU talks to Pi via UART serial at 115200 baud', 'Keep MCU code lean — no String, no delay()'],
+    code: `<span class="cm">// Main loop — Arduino</span>\n<span class="ck">void</span> loop() {\n  readSensors();     <span class="cm">// every 10ms</span>\n  runPID();          <span class="cm">// every 20ms</span>\n  sendToRPi();       <span class="cm">// every 50ms</span>\n  checkUART();       <span class="cm">// receive cmds</span>\n}`,
+    badges: ['Arduino Mega', 'STM32F103', 'Arduino Nano', 'ESP32']
+  },
+  kalman: {
+    tag: 'L2 — Firmware',
+    title: 'Sensor Fusion (Kalman Filter)',
+    subtitle: 'Combines noisy sensor data into clean estimates',
+    what: `Raw sensor data is noisy. The <strong>Kalman filter</strong> mathematically combines multiple noisy sources (IMU + encoder) to produce a single clean, low-noise estimate of position and orientation.<br/><br/>Think of it as: encoder says "you moved 10cm" but IMU says "you rotated 2°" — the Kalman filter reconciles these to give the best possible estimate of your true state.`,
+    tips: ['Complementary filter is simpler — good starting point', 'Kalman filter needs a Q (process noise) and R (measurement noise) matrix', 'Libraries: SimpleKalmanFilter for Arduino', 'Run at same frequency as your fastest sensor'],
+    code: `<span class="cm">// Simple complementary filter</span>\n<span class="cn">float</span> alpha = 0.98;\nangle = alpha * (angle + gyro * dt)\n      + (1-alpha) * accel_angle;\n<span class="cm">// Sends clean angle to SLAM</span>`,
+    badges: ['Kalman Filter', 'Complementary Filter', 'EKF', 'Madgwick Filter']
+  },
+  pid: {
+    tag: 'L2 — Firmware',
+    title: 'Motor PID Controller',
+    subtitle: 'Keeps speed and direction precise',
+    what: `PID = <strong>Proportional + Integral + Derivative</strong>. It continuously corrects motor speed to match the target. Without PID, one motor may spin faster than the other causing the robot to drift instead of going straight.<br/><br/>You set a target speed → encoder reports actual speed → PID adjusts PWM duty cycle until actual = target.`,
+    tips: ['Start with just P (proportional) and tune first', 'I term corrects steady-state error (motor never reaches target)', 'D term reduces overshoot and oscillation', 'Tune Kp, Ki, Kd by trial — start Kp=1, Ki=0.01, Kd=0.1'],
+    code: `<span class="cm">// PID update — runs every 20ms</span>\nerror = target - actual_speed;\nintegral += error * dt;\nderivative = (error - prev) / dt;\noutput = Kp*error + Ki*integral\n        + Kd*derivative;\nprev = error;`,
+    badges: ['PID', 'PWM', 'Encoder feedback', 'Speed control']
+  },
+  uart: {
+    tag: 'L2 — Firmware',
+    title: 'UART Serial Bridge',
+    subtitle: 'MCU ↔ Raspberry Pi communication',
+    what: `UART (Universal Asynchronous Receiver-Transmitter) is the wire connecting your Arduino to your Raspberry Pi. The MCU sends sensor data up to the Pi, and the Pi sends movement commands back down.<br/><br/>Use a <strong>structured data packet</strong> — e.g. JSON strings terminated by newline. Run at 115200 baud for reliable, fast transfer.`,
+    tips: ['3.3V logic level shifter needed if MCU is 5V and Pi is 3.3V', 'Send JSON: {"dist":23.4,"heading":92.1}', 'Pi reads with pyserial library', 'Add checksum to detect corrupted packets'],
+    code: `<span class="cm">// Arduino sends data</span>\nSerial.print(<span class="cs">'{"d":'</span>);\nSerial.print(distance);\nSerial.println(<span class="cs">'}'</span>);\n<span class="cm"># Pi receives — Python</span>\n<span class="ck">import</span> serial\nser = serial.Serial(<span class="cs">'/dev/ttyUSB0'</span>,115200)\nline = ser.readline().decode()`,
+    badges: ['UART', 'pyserial', '115200 baud', 'Logic level shifter']
+  },
+  interrupt: {
+    tag: 'L2 — Firmware',
+    title: 'Interrupt Handler',
+    subtitle: 'Real-time event-driven sensor reads',
+    what: `Instead of checking sensors in a loop (which wastes CPU cycles), <strong>interrupts</strong> let the MCU react instantly when something happens — like an encoder pulse. This is critical for accurate odometry: missing encoder pulses = wrong distance calculation.<br/><br/>Attach encoder pins to hardware interrupt pins on Arduino for precise counting.`,
+    tips: ['Arduino Mega has 6 hardware interrupt pins', 'ISR (Interrupt Service Routine) must be fast — no Serial, no delay', 'Use volatile variables shared between ISR and main loop', 'Debounce mechanical encoders to avoid false pulses'],
+    code: `<span class="ck">volatile</span> <span class="cn">long</span> encoderCount = 0;\n<span class="ck">void</span> encoderISR() {\n  encoderCount++;\n}\n<span class="ck">void</span> setup() {\n  attachInterrupt(\n    digitalPinToInterrupt(2),\n    encoderISR, RISING);\n}`,
+    badges: ['Hardware interrupt', 'ISR', 'Volatile', 'Encoder counting']
+  },
+  slam: {
+    tag: 'L3 — Algorithm Engine',
+    title: 'SLAM Module',
+    subtitle: 'Simultaneous Localization and Mapping',
+    what: `SLAM solves the chicken-and-egg problem: <strong>to build a map you need to know where you are, but to know where you are you need a map</strong>. Algorithms like GMapping (particle filter) or Hector SLAM solve both simultaneously.<br/><br/>The output is an <strong>occupancy grid map</strong> — a 2D grid where each cell is marked free, occupied (wall/obstacle), or unknown. This is what everything else (path planning, visualization) uses.`,
+    tips: ['Hector SLAM works without wheel encoders — good if odometry is noisy', 'GMapping uses a particle filter — more robust but needs good odometry', 'Use ROS nav_msgs/OccupancyGrid for the map message type', 'Map resolution: 5cm per cell is a good starting point'],
+    code: `<span class="cm"># ROS GMapping launch</span>\n<span class="ck">rosrun</span> gmapping slam_gmapping\n  scan:=/scan\n  _particles:=30\n  _map_update_interval:=2.0\n<span class="cm"># Save the map when done</span>\n<span class="ck">rosrun</span> map_server map_saver\n  -f my_map`,
+    badges: ['GMapping', 'Hector SLAM', 'Occupancy grid', 'ROS nav stack']
+  },
+  astar: {
+    tag: 'L3 — Algorithm Engine',
+    title: 'Path Planner (A*)',
+    subtitle: 'Finds shortest path on the occupancy grid',
+    what: `Once SLAM gives you an occupancy grid, <strong>A*</strong> finds the optimal path from the robot's current position to a goal position, avoiding all marked obstacles.<br/><br/>A* uses a heuristic (usually Euclidean distance to goal) to search efficiently — it doesn't explore cells that are clearly going the wrong way. <strong>Dijkstra's</strong> is A* without the heuristic — guaranteed optimal but slower on large maps.`,
+    tips: ['Inflate obstacles by robot radius before planning — prevents clipping walls', 'Use 8-directional movement (diagonal) for smoother paths', 'Re-plan every 2–3 seconds if robot drifts from path', 'ROS move_base handles all of this if you use the nav stack'],
+    code: `<span class="cm"># Simple A* on grid — Python</span>\n<span class="ck">import</span> heapq\n<span class="ck">def</span> astar(grid, start, goal):\n  heap = [(0, start)]\n  came_from = {}\n  g = {start: 0}\n  <span class="ck">while</span> heap:\n    _, cur = heapq.heappop(heap)\n    <span class="ck">if</span> cur == goal: <span class="ck">break</span>\n    <span class="cm">...# expand neighbors</span>`,
+    badges: ['A*', 'Dijkstra', 'ROS move_base', 'Global planner']
+  },
+  nav: {
+    tag: 'L3 — Algorithm Engine',
+    title: 'Navigation Controller',
+    subtitle: 'Real-time obstacle avoidance while moving',
+    what: `A* gives you a planned path, but what happens when a new obstacle appears mid-journey? The <strong>Dynamic Window Approach (DWA)</strong> local planner handles this — it samples possible velocity commands, simulates them forward in time, and picks the safest one that also keeps you on the global path.<br/><br/>In ROS, <strong>move_base</strong> combines global planner (A*) + local planner (DWA) automatically.`,
+    tips: ['DWA parameters: max_vel_x, min_vel_x, max_vel_theta need tuning', 'Set a cost map inflation radius equal to your robot\'s half-width', 'For simple projects, bug algorithm (follow wall, turn on obstacle) is enough', 'Recovery behaviors: rotate-in-place when stuck'],
+    code: `<span class="cm"># ROS move_base goal — Python</span>\n<span class="ck">from</span> move_base_msgs.msg <span class="ck">import</span> MoveBaseGoal\nclient = actionlib.SimpleActionClient(\n  <span class="cs">'move_base'</span>, MoveBaseAction)\ngoal = MoveBaseGoal()\ngoal.target_pose.pose.position.x = 2.0\nclient.send_goal(goal)`,
+    badges: ['DWA', 'move_base', 'Local planner', 'Costmap']
+  },
+  yolo: {
+    tag: 'L3 — Algorithm Engine',
+    title: 'Object Tracker (YOLOv5)',
+    subtitle: 'Detects and tracks objects in camera feed',
+    what: `<strong>YOLOv5</strong> (You Only Look Once) is a neural network that detects objects in a single forward pass — giving you class labels and bounding boxes in real time. On Raspberry Pi it runs at ~3–5 FPS, which is acceptable.<br/><br/>For tracking (keeping the same ID on a moving object across frames), add <strong>SORT</strong> or <strong>DeepSORT</strong> on top of YOLO detections.`,
+    tips: ['Use YOLOv5n (nano) on Pi — smallest and fastest', 'Run on a separate thread to not block navigation', 'OpenCV\'s DNN module can run lighter models if YOLO is too slow', 'Publish detected objects as ROS topics for the rest of the system'],
+    code: `<span class="cm"># YOLOv5 inference — Python</span>\n<span class="ck">import</span> torch\nmodel = torch.hub.load(\n  <span class="cs">'ultralytics/yolov5'</span>,\n  <span class="cs">'yolov5n'</span>)\nresults = model(frame)\n<span class="ck">for</span> *box, conf, cls <span class="ck">in</span> results.xyxy[0]:\n  label = model.names[<span class="cn">int</span>(cls)]`,
+    badges: ['YOLOv5n', 'OpenCV DNN', 'SORT tracker', 'DeepSORT']
+  },
+  mapview: {
+    tag: 'L4 — Visualization',
+    title: 'Live Map Display',
+    subtitle: 'Renders the occupancy grid in real time',
+    what: `<strong>RViz</strong> is the standard ROS visualization tool — it can display the occupancy grid map, robot position, laser scan, and path all in one 3D view with zero extra code.<br/><br/>If not using ROS, you can render the occupancy grid as a 2D image using <strong>matplotlib</strong> or a web canvas, updating it as the robot maps more of the environment.`,
+    tips: ['RViz subscribes directly to /map topic — plug and play', 'For web dashboard: serialize map as PNG and send via WebSocket', 'Color code: white = free, black = obstacle, gray = unknown', 'Update map display at ~1Hz — no need for faster refresh'],
+    code: `<span class="cm"># Render occupancy grid — Python</span>\n<span class="ck">import</span> numpy <span class="ck">as</span> np\n<span class="ck">import</span> matplotlib.pyplot <span class="ck">as</span> plt\ngrid = np.array(map_msg.data)\ngrid = grid.reshape(height, width)\nplt.imshow(grid, cmap=<span class="cs">'gray'</span>)\nplt.pause(0.1)`,
+    badges: ['RViz', 'matplotlib', 'OpenCV', 'Canvas API']
+  },
+  pathoverlay: {
+    tag: 'L4 — Visualization',
+    title: 'Path Overlay',
+    subtitle: 'Shows planned path vs actual robot trail',
+    what: `Draw two things on top of the map: <strong>planned path</strong> (from A* — shown in blue) and <strong>actual trail</strong> (where the robot actually went — shown in green). The gap between them reveals navigation drift or obstacle detours.<br/><br/>In RViz, subscribe to /move_base/NavfnROS/plan for planned path and /odom for actual trail.`,
+    tips: ['Store robot poses in a list as it moves — this is the actual trail', 'Planned path resets every time A* replans', 'Color: blue = planned, green = actual, red = deviation highlight', 'Thin line (1px) for history, thick (3px) for current path'],
+    code: `<span class="cm"># Draw path on grid — Python</span>\n<span class="ck">for</span> pose <span class="ck">in</span> planned_path:\n  px = world_to_pixel(pose.x)\n  py = world_to_pixel(pose.y)\n  cv2.circle(img,(px,py),2,\n    (255,0,0),-1)  <span class="cm"># blue</span>`,
+    badges: ['Path visualization', 'Odometry trail', 'RViz markers', 'Canvas drawing']
+  },
+  objpanel: {
+    tag: 'L4 — Visualization',
+    title: 'Object Detection Panel',
+    subtitle: 'Live camera feed with bounding boxes',
+    what: `Show the camera feed on your dashboard with YOLO bounding boxes drawn on top. Each detected object gets a colored box, a class label, and a confidence score.<br/><br/>Also show a sidebar list of all currently tracked objects with their IDs, class, and how long they've been tracked.`,
+    tips: ['Use cv2.rectangle() + cv2.putText() to draw boxes on frame', 'Stream annotated frames as MJPEG over HTTP for browser display', 'Show confidence threshold slider so user can filter weak detections', 'Group by class — show count of each detected object type'],
+    code: `<span class="cm"># Draw bounding box — OpenCV</span>\ncv2.rectangle(frame,\n  (x1,y1), (x2,y2),\n  (0,255,0), 2)\ncv2.putText(frame, label,\n  (x1, y1-10),\n  cv2.FONT_HERSHEY_SIMPLEX,\n  0.5, (0,255,0), 1)`,
+    badges: ['MJPEG stream', 'cv2.rectangle', 'Bounding boxes', 'Object list']
+  },
+  dashboard: {
+    tag: 'L4 — Visualization',
+    title: 'Robot Dashboard',
+    subtitle: 'Telemetry, battery, speed, system logs',
+    what: `A web dashboard (Flask + WebSocket) showing all robot vitals: current speed, battery percentage, heading, number of objects detected, mapping coverage %, and a live log console.<br/><br/>Build it as a single HTML page with JavaScript that connects to your Pi's WebSocket server. Update gauges and charts in real time as the robot operates.`,
+    tips: ['Use Chart.js for speed/battery history graphs', 'WebSocket message rate: 10Hz for position, 1Hz for battery', 'Add a manual override panel — WASD keys to drive robot manually', 'Log all events with timestamps to a file for evaluation'],
+    code: `<span class="cm">// Browser WebSocket client</span>\n<span class="ck">const</span> ws = <span class="ck">new</span> WebSocket(\n  <span class="cs">'ws://raspberrypi.local:5000'</span>);\nws.onmessage = (e) => {\n  <span class="ck">const</span> d = JSON.parse(e.data);\n  updateSpeed(d.speed);\n  updateBattery(d.battery);\n};`,
+    badges: ['Flask-SocketIO', 'Chart.js', 'WebSocket', 'MJPEG embed']
+  },
+  rostopic: {
+    tag: 'L5 — Communication',
+    title: 'ROS Topics',
+    subtitle: 'Internal pub/sub message bus',
+    what: `ROS topics are the <strong>internal nervous system</strong> of your robot — every module (SLAM, planner, detector) publishes data to named topics, and any other module can subscribe to receive it.<br/><br/>Key topics: <code>/scan</code> (LiDAR data), <code>/odom</code> (robot position), <code>/map</code> (occupancy grid), <code>/cmd_vel</code> (velocity commands), <code>/detections</code> (object detections).`,
+    tips: ['/cmd_vel is the standard topic for movement commands (Twist message)', 'rosbridge_suite exposes all topics as WebSocket for browser access', 'Use rostopic echo /topic to debug any data stream in terminal', 'rqt_graph shows the full node/topic connectivity graph'],
+    code: `<span class="cm"># Publish velocity command</span>\n<span class="ck">from</span> geometry_msgs.msg <span class="ck">import</span> Twist\npub = rospy.Publisher(\n  <span class="cs">'/cmd_vel'</span>, Twist, queue_size=1)\ntwist = Twist()\ntwist.linear.x = 0.2  <span class="cm"># m/s</span>\ntwist.angular.z = 0.1 <span class="cm"># rad/s</span>\npub.publish(twist)`,
+    badges: ['/scan', '/odom', '/map', '/cmd_vel', 'Twist', 'rosbridge']
+  },
+  websocket: {
+    tag: 'L5 — Communication',
+    title: 'WebSocket / Flask',
+    subtitle: 'Live streaming to browser dashboard',
+    what: `WebSocket keeps a <strong>persistent, bidirectional connection</strong> between the Raspberry Pi server and your browser dashboard — enabling live data push without polling.<br/><br/>Use <strong>Flask-SocketIO</strong> on the Pi: it runs a web server and handles WebSocket connections. Your browser JavaScript connects, and the Pi pushes robot state data continuously.`,
+    tips: ['Use flask_socketio.emit() to push data from any thread', 'If using ROS: rosbridge_suite is WebSocket-native — no Flask needed', 'Browser-to-robot commands also travel back via WebSocket', 'Add CORS headers if dashboard is on a different machine'],
+    code: `<span class="cm"># Flask-SocketIO server — Pi</span>\n<span class="ck">from</span> flask_socketio <span class="ck">import</span> SocketIO\napp = Flask(__name__)\nsocketio = SocketIO(app)\n<span class="ck">def</span> stream_loop():\n  <span class="ck">while</span> True:\n    socketio.emit(<span class="cs">'state'</span>,\n      get_robot_state())\n    time.sleep(0.1)`,
+    badges: ['Flask-SocketIO', 'rosbridge_suite', 'socket.io.js', 'WebSocket API']
+  },
+  uartcomms: {
+    tag: 'L5 — Communication',
+    title: 'UART Serial',
+    subtitle: 'Wired bridge between MCU and Pi',
+    what: `UART is the physical wire connection between your Arduino/STM32 and the Raspberry Pi. The MCU sends sensor packets up (distance, encoder counts, heading), and the Pi sends velocity commands back down.<br/><br/>Use a <strong>structured JSON format</strong> for packets and always end with a newline so the receiver knows when a complete message arrived.`,
+    tips: ['Baud rate: 115200 is fast and reliable for this use case', '3.3V logic shifter required: Arduino is 5V, Pi is 3.3V', 'pyserial on Pi: ser.readline() blocks until newline received', 'Add a packet ID and checksum to detect dropped/corrupted packets'],
+    code: `<span class="cm"># Pi reads from Arduino</span>\n<span class="ck">import</span> serial, json\nser = serial.Serial(\n  <span class="cs">'/dev/ttyUSB0'</span>, 115200)\n<span class="ck">while</span> True:\n  line = ser.readline().decode()\n  data = json.loads(line)\n  dist = data[<span class="cs">'dist'</span>]`,
+    badges: ['pyserial', '115200 baud', 'Logic shifter', 'JSON packets']
+  },
+  wifi: {
+    tag: 'L5 — Communication',
+    title: 'WiFi / SSH Streaming',
+    subtitle: 'Remote access and data streaming',
+    what: `The Raspberry Pi connects to your WiFi network — this lets you access it via SSH from your laptop without a monitor, and serves the web dashboard over HTTP/WebSocket to any browser on the same network.<br/><br/>For the evaluation demo, your supervisor can open the dashboard URL on their laptop and watch the robot operate in real time.`,
+    tips: ['Set a static IP on the Pi so the URL never changes', 'Use VNC or RDP to see the Pi desktop remotely if needed', 'Enable SSH on Pi: sudo systemctl enable ssh', 'For camera streaming: MJPEG over HTTP is simplest and lowest latency'],
+    code: `<span class="cm"># MJPEG camera stream — Flask</span>\n<span class="ck">def</span> gen_frames():\n  <span class="ck">while</span> True:\n    _, frame = cap.read()\n    _, buf = cv2.imencode(\n      <span class="cs">'.jpg'</span>, frame)\n    <span class="ck">yield</span> (b<span class="cs">'--frame\\r\\n'</span>\n      + buf.tobytes())`,
+    badges: ['SSH', 'WiFi LAN', 'MJPEG stream', 'Static IP', 'VNC']
+  }
+};
+
+function openPanel(id) {
+  const d = data[id];
+  if (!d) return;
+
+  document.getElementById('panel-tag').textContent = d.tag;
+  document.getElementById('panel-title').textContent = d.title;
+  document.getElementById('panel-subtitle').textContent = d.subtitle;
+
+  document.getElementById('panel-body').innerHTML = `
+    <div class="panel-section">
+      <div class="panel-section-title">What it is</div>
+      <p class="panel-desc">${d.what}</p>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Key tips for your project</div>
+      <ul class="tip-list">
+        ${d.tips.map(t => `<li>${t}</li>`).join('')}
+      </ul>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Code snippet</div>
+      <div class="code-block">${d.code}</div>
+    </div>
+    <div class="panel-section">
+      <div class="panel-section-title">Tools & libraries</div>
+      <div class="badge-row">
+        ${d.badges.map(b => `<span class="badge">${b}</span>`).join('')}
+      </div>
+    </div>
+  `;
+
+  document.getElementById('panel').classList.add('open');
+  document.getElementById('overlay').classList.add('show');
+
+  // Mark active
+  document.querySelectorAll('.component').forEach(c => c.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+}
+
+function closePanel() {
+  document.getElementById('panel').classList.remove('open');
+  document.getElementById('overlay').classList.remove('show');
+  document.querySelectorAll('.component').forEach(c => c.classList.remove('active'));
+}
+
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape') closePanel();
+});
+</script>
+</body>
+</html>
